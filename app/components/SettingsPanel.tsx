@@ -1,65 +1,96 @@
-import { useState } from 'react';
+// app/components/SettingsPanel.tsx
+'use client'
 
-export default function SettingsPanel({ initialSettings }) {
-  const [wastage, setWastage] = useState(initialSettings.wastageFactor * 100);
-  const [tiers, setTiers] = useState(initialSettings.bulkTiers);
+import { useState } from 'react'
+
+// 1. Define the TypeScript structures for your configuration
+interface BulkTier {
+  minQuantity: number
+  pricePerPage: number
+}
+
+interface SettingsPanelProps {
+  initialSettings: {
+    wastageFactor: number
+    bulkTiers: BulkTier[]
+  }
+}
+
+// 2. Apply the interface to the component props
+export default function SettingsPanel({ initialSettings }: SettingsPanelProps) {
+  const [wastage, setWastage] = useState(initialSettings.wastageFactor * 100)
+  const [tiers, setTiers] = useState<BulkTier[]>(initialSettings.bulkTiers)
 
   const handleSave = async () => {
-    await fetch('/api/settings', {
-      method: 'POST',
-      body: JSON.stringify({ 
-        wastageFactor: wastage / 100, 
-        bulkTiers: tiers 
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          wastageFactor: wastage / 100, 
+          bulkTiers: tiers 
+        })
       })
-    });
-    alert("Settings updated seamlessly!");
-  };
+
+      if (!response.ok) throw new Error('Failed to update settings')
+      alert("Settings updated seamlessly!")
+    } catch (error) {
+      alert("Error saving configurations.")
+    }
+  }
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md max-w-xl">
-      <h2 className="text-2xl font-bold mb-4">Pricing Configuration</h2>
+    <div className="p-6 bg-white rounded-lg shadow-md max-w-xl mx-auto border border-gray-200">
+      <h2 className="text-2xl font-bold mb-4 text-gray-900">Pricing Configuration</h2>
       
       <div className="mb-6">
-        <label className="block text-gray-700 font-bold mb-2">
+        <label className="block text-gray-700 font-bold mb-1">
           Wastage Factor (%)
         </label>
-        <p className="text-sm text-gray-500 mb-2">Accounts for jams and misprints.</p>
+        <p className="text-xs text-gray-500 mb-2">Accounts for paper jams, misprints, and layout scraps.</p>
         <input 
           type="number" 
           value={wastage} 
           onChange={(e) => setWastage(Number(e.target.value))}
-          className="border p-2 rounded w-full"
+          className="border border-gray-300 p-2 rounded w-full text-gray-950 focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       <div className="mb-6">
         <label className="block text-gray-700 font-bold mb-2">
-          Wholesale/Bulk Tiers
+          Wholesale / Bulk Tiers
         </label>
-        {tiers.map((tier, index) => (
-          <div key={index} className="flex gap-4 mb-2">
-            <input 
-              type="number" 
-              placeholder="Min Pages" 
-              value={tier.minQuantity} 
-              className="border p-2 rounded w-1/2"
-              readOnly
-            />
-            <input 
-              type="number" 
-              placeholder="Price/Page ($)" 
-              value={tier.pricePerPage} 
-              className="border p-2 rounded w-1/2"
-              readOnly
-            />
-          </div>
-        ))}
-        {/* Button to add new tiers would go here */}
+        <div className="space-y-2">
+          {tiers.map((tier, index) => (
+            <div key={index} className="flex gap-4">
+              <div className="w-1/2">
+                <span className="text-xs text-gray-400 block mb-0.5">Min Pages</span>
+                <input 
+                  type="number" 
+                  value={tier.minQuantity} 
+                  className="border border-gray-300 bg-gray-50 p-2 rounded w-full text-gray-700 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+              <div className="w-1/2">
+                <span className="text-xs text-gray-400 block mb-0.5">Price / Page ($)</span>
+                <input 
+                  type="number" 
+                  value={tier.pricePerPage} 
+                  className="border border-gray-300 bg-gray-50 p-2 rounded w-full text-gray-700 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded w-full">
+      <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-3 rounded-lg w-full transition-colors">
         Save Configurations
       </button>
     </div>
-  );
+  )
 }
