@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // Hashed password
+  role      String   @default("CASHIER") // ADMIN or CASHIER
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // "RETAIL" or "RAW_MATERIAL"
+  stock       Int      @default(0)
+  baseCost    Float
+  retailPrice Float?   // For standard supplies
+}
+
+model AppSettings {
+  id            Int      @id @default(1)
+  wastageFactor Float    @default(0.05) // 5% default
+  bulkTiers     Json     // Stores array of { minQuantity: 100, pricePerPage: 0.04 }
+}
+
+model Sale {
+  id          String   @id @default(uuid())
+  totalAmount Float
+  totalCost   Float    // To calculate profit
+  createdAt   DateTime @default(now())
+  items       SaleItem[]
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Int
+  pricePaid Float
+  sale      Sale    @relation(fields: [saleId], references: [id])
+}
